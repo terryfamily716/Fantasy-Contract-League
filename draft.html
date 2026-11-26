@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy GM versus Agents - Draft Board - V0.08</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .header h1 { font-size: 22px; color: #3b82f6; }
+  .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+  .version { color: #FFD700; font-size: 12px; }
+  .home-link { color: #60a5fa; font-size: 13px; text-decoration: none; }
+  .cap-tracker { background: #1a1f2e; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
+  .cap-tracker .remaining { color: #60a5fa; font-weight: bold; }
+  .nomination-card { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #ef4444; }
+  .nomination-card h2 { font-size: 15px; color: #ef4444; margin-bottom: 8px; }
+  .nomination-card .player-name { font-size: 20px; font-weight: bold; }
+  .nomination-card .meta { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+  .nomination-card .expected { margin-top: 8px; font-size: 14px; color: #f59e0b; }
+  .clock { margin-top: 10px; font-size: 18px; font-weight: bold; color: #ef4444; }
+  .clock .time { color: #fff; }
+  .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .team-box { background: #1a1f2e; border-radius: 8px; padding: 10px; border: 1px solid #334155; }
+  .team-box .team-name { font-size: 13px; font-weight: bold; color: #60a5fa; }
+  .team-box .roster-count { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .team-box.active { border-color: #ef4444; }
+  .offer-feed { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .offer-feed h2 { font-size: 15px; color: #94a3b8; margin-bottom: 12px; }
+  .offer-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 13px; }
+  .offer-row:last-child { border-bottom: none; }
+  .offer-row .team { color: #60a5fa; font-weight: bold; }
+  .offer-row .terms { color: #cbd5e1; }
+  .offer-row .time-ago { color: #64748b; font-size: 11px; }
+  .your-offer { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .your-offer h2 { font-size: 15px; color: #94a3b8; margin-bottom: 12px; }
+  .field-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 120px; }
+  .field label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+  .input-wrap { display: flex; align-items: center; background: #0f1419; border: 1px solid #334155; border-radius: 6px; overflow: hidden; }
+  .input-wrap .prefix { color: #60a5fa; padding: 8px 0 8px 10px; font-size: 14px; font-weight: bold; }
+  .input-wrap input { flex: 1; background: transparent; border: none; color: #e2e8f0; padding: 8px 10px 8px 4px; font-size: 14px; outline: none; }
+  .field select { width: 100%; background: #0f1419; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 8px; font-size: 14px; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
+  .toggle-row input { width: 18px; height: 18px; }
+  .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+  .btn-submit { background: #3b82f6; color: #fff; }
+  .btn-pass { background: #475569; color: #fff; }
+  .note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Fantasy GM versus Agents</h1>
+      <div class="subtitle">Draft Board - 12 Teams</div>
+    </div>
+    <div style="text-align:right">
+      <a class="home-link" href="index.html">Back to Home</a>
+      <div class="version">11.26.26 V0.08</div>
+    </div>
+  </div>
+  <div class="cap-tracker">League Cap: $301,000,000 | Your Team Used: <span id="capUsed">$0</span> | Remaining: <span class="remaining" id="capRemaining">$301,000,000</span></div>
+  <div class="nomination-card">
+    <h2>NOW NOMINATED</h2>
+    <div class="player-name" id="nomName">Justin Jefferson, WR</div>
+    <div class="meta">Age 26 | Vikings | Agent: Marcus Delacroix - <span style="color:#f59e0b;font-weight:bold">Cutthroat</span></div>
+    <div class="expected">Agent's expected value: 4 years, $28,000,000/yr, $16,000,000 bonus, $70,000,000 guaranteed. Wants a contender.</div>
+    <div class="clock">Player decision clock: <span class="time" id="clock">23:58:41</span></div>
+  </div>
+  <div class="teams-grid" id="teamsGrid"></div>
+  <div class="offer-feed">
+    <h2>Public Offer Feed</h2>
+    <div class="offer-row"><span class="team">Kansas City Chiefs</span><span class="terms">5 yrs, $30M/yr, $20M bonus, $90M guaranteed, no-trade</span><span class="time-ago">2 min ago</span></div>
+    <div class="offer-row"><span class="team">Buffalo Bills</span><span class="terms">4 yrs, $29M/yr, $18M bonus, $75M guaranteed</span><span class="time-ago">5 min ago</span></div>
+    <div class="offer-row"><span class="team">Your Team</span><span class="terms">4 yrs, $25M/yr, $15M bonus, $60M guaranteed</span><span class="time-ago">12 min ago</span></div>
+  </div>
+  <div class="your-offer">
+    <h2>Your Offer</h2>
+    <div class="field-row">
+      <div class="field"><label>Years</label><select id="years"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
+      <div class="field"><label>Base Salary</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="base" value="25000000" min="1000000" step="1000000"></div></div>
+      <div class="field"><label>Signing Bonus</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="bonus" value="15000000" min="0" step="1000000"></div></div>
+      <div class="field"><label>Guaranteed</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="guaranteed" value="60000000" min="0" step="1000000"></div></div>
+    </div>
+    <div class="toggle-row"><input type="checkbox" id="noTrade"><label for="noTrade">No-trade clause</label></div>
+    <div class="buttons">
+      <button class="btn btn-submit" onclick="submitOffer()">Submit Offer</button>
+      <button class="btn btn-pass" onclick="passOnPlayer()">Pass</button>
+    </div>
+  </div>
+  <div class="note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
+<script>
+  var teams = ["Your Team","Kansas City Chiefs","Buffalo Bills","Baltimore Ravens","San Francisco 49ers","Dallas Cowboys","Green Bay Packers","Philadelphia Eagles","Miami Dolphins","Denver Broncos","Seattle Seahawks","Las Vegas Raiders"];
+  var grid = document.getElementById("teamsGrid");
+  teams.forEach(function(t, i) {
+    var box = document.createElement("div");
+    box.className = "team-box" + (i === 0 ? " active" : "");
+    box.innerHTML = "<div class=\"team-name\">" + t + "</div><div class=\"roster-count\">0 players signed</div>";
+    grid.appendChild(box);
+  });
+  var secs = 23*3600 + 58*60 + 41;
+  setInterval(function() {
+    secs--;
+    if (secs < 0) secs = 0;
+    var h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+    document.getElementById("clock").textContent = (h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+  }, 1000);
+  function submitOffer() {
+    var base = parseFloat(document.getElementById("base").value) || 0;
+    var bonus = parseFloat(document.getElementById("bonus").value) || 0;
+    var years = parseInt(document.getElementById("years").value) || 1;
+    var hit = base + (bonus / years);
+    alert("Offer submitted: " + years + " years at $" + base.toLocaleString() + "/yr with $" + bonus.toLocaleString() + " bonus. Cap hit: $" + hit.toLocaleString() + "/yr. Posted to public feed.");
+  }
+  function passOnPlayer() {
+    alert("You passed on Justin Jefferson. He's still available to the other 11 teams.");
+  }
+</script>
+</body>
+</html>
