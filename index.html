@@ -3,150 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - V0.07</title>
+<title>Fantasy GM versus Agents - V0.08</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .header h1 { font-size: 22px; color: #3b82f6; }
-  .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+  body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .hero { text-align: center; max-width: 640px; }
+  .hero h1 { font-size: clamp(28px, 6vw, 48px); color: #3b82f6; margin-bottom: 8px; }
+  .hero .subtitle { font-size: clamp(16px, 3vw, 22px); color: #f59e0b; margin-bottom: 24px; }
+  .hero p { font-size: 15px; color: #94a3b8; line-height: 1.6; margin-bottom: 32px; }
+  .actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+  .btn { padding: 14px 32px; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn-create { background: #22c55e; color: #fff; }
+  .btn-join { background: #3b82f6; color: #fff; }
+  .btn-draft { background: transparent; color: #60a5fa; border: 2px solid #3b82f6; }
+  .btn:hover { opacity: 0.9; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; max-width: 640px; width: 100%; margin-bottom: 32px; }
+  .feature { background: #1a1f2e; border-radius: 8px; padding: 14px; font-size: 13px; color: #cbd5e1; border-left: 3px solid #3b82f6; }
+  .feature strong { color: #60a5fa; display: block; margin-bottom: 4px; }
   .version { color: #FFD700; font-size: 12px; }
-  .cap-tracker { background: #1a1f2e; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
-  .cap-tracker .remaining { color: #60a5fa; font-weight: bold; }
-  .cap-tracker .negative { color: #ef4444; font-weight: bold; }
-  .player-card { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #3b82f6; }
-  .player-card .name { font-size: 20px; font-weight: bold; }
-  .player-card .meta { color: #94a3b8; font-size: 13px; margin-top: 4px; }
-  .agent-line { margin-top: 8px; font-size: 13px; color: #cbd5e1; }
-  .agent-line .personality { color: #f59e0b; font-weight: bold; }
-  .current-deal { margin-top: 10px; font-size: 13px; color: #cbd5e1; }
-  .current-deal span { color: #60a5fa; }
-  .offer-panel { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .offer-panel h2 { font-size: 15px; margin-bottom: 12px; color: #94a3b8; }
-  .field-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-  .field { flex: 1; min-width: 120px; }
-  .field label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-  .input-wrap { display: flex; align-items: center; background: #0f1419; border: 1px solid #334155; border-radius: 6px; overflow: hidden; }
-  .input-wrap .prefix { color: #60a5fa; padding: 8px 0 8px 10px; font-size: 14px; font-weight: bold; }
-  .input-wrap input { flex: 1; background: transparent; border: none; color: #e2e8f0; padding: 8px 10px 8px 4px; font-size: 14px; outline: none; }
-  .field select { width: 100%; background: #0f1419; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 8px; font-size: 14px; }
-  .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
-  .toggle-row input { width: 18px; height: 18px; }
-  .bonus-group { margin-bottom: 14px; }
-  .bonus-group .pos-label { display: block; font-size: 12px; color: #3b82f6; margin-bottom: 6px; font-weight: bold; text-transform: uppercase; }
-  .bonus-options { display: flex; flex-direction: column; gap: 6px; }
-  .bonus-options label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; text-transform: none; cursor: pointer; }
-  .bonus-options input { width: 18px; height: 18px; }
-  .breakdown { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .breakdown h2 { font-size: 15px; margin-bottom: 12px; color: #94a3b8; }
-  .year-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-  .year-box { background: #0f1419; border-radius: 6px; padding: 10px; text-align: center; border: 1px solid #334155; }
-  .year-box .yr { font-size: 11px; color: #64748b; text-transform: uppercase; }
-  .year-box .amt { font-size: 14px; color: #60a5fa; font-weight: bold; margin-top: 4px; }
-  .year-box .bonus-part { font-size: 10px; color: #94a3b8; margin-top: 2px; }
-  .agent-response { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #ef4444; display: none; }
-  .agent-response h2 { font-size: 15px; margin-bottom: 8px; color: #ef4444; }
-  .agent-response .reasoning { font-size: 13px; color: #cbd5e1; font-style: italic; }
-  .agent-response .counter-terms { margin-top: 10px; font-size: 13px; color: #60a5fa; }
-  .agent-response .agent-bonus { margin-top: 8px; font-size: 13px; color: #f59e0b; }
-  .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
-  .btn-accept { background: #22c55e; color: #fff; }
-  .btn-counter { background: #f59e0b; color: #fff; }
-  .btn-pass { background: #475569; color: #fff; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .result { margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 14px; display: none; }
-  .result.success { background: #14532d; color: #86efac; }
-  .result.fail { background: #450a0a; color: #fca5a5; }
-  .roster-note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
-  .restructure-panel { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; display: none; border-left: 4px solid #f59e0b; }
-  .restructure-panel h2 { font-size: 15px; margin-bottom: 12px; color: #f59e0b; }
-  .restructure-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .btn-restructure { background: #334155; color: #e2e8f0; padding: 8px 14px; border-radius: 6px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
-  .btn-restructure:hover { background: #475569; }
-  .restructure-note { font-size: 12px; color: #94a3b8; font-style: italic; }
+  .note { margin-top: 24px; font-size: 11px; color: #475569; text-align: center; }
 </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <h1>Fantasy GM versus Agents</h1>
-      <div class="subtitle">Fantasy Football</div>
+  <div class="hero">
+    <h1>Fantasy GM versus Agents</h1>
+    <div class="subtitle">Fantasy Football</div>
+    <p>Build your roster the way real NFL front offices do. No blind auctions, no salary-cap spreadsheets. You nominate a player, twelve teams compete in the open, and his agent negotiates on his behalf — weighing your offer against everyone else's, your team's chances of winning, and the clock running out.</p>
+    <div class="actions">
+      <a class="btn btn-create" href="#">Create League</a>
+      <a class="btn btn-join" href="#">Join League</a>
     </div>
-    <div class="version">11.26.26 V0.07</div>
+    <a class="btn btn-draft" href="draft.html">Try the Mock Draft Board</a>
   </div>
-  <div class="cap-tracker">Salary Cap: $200,000,000 | Used: <span id="capUsed">$213,000,000</span> | Remaining: <span class="negative" id="capRemaining">-$13,000,000</span></div>
-  <div class="player-card">
-    <div class="name" id="playerName">Justin Jefferson, WR</div>
-    <div class="meta">Position Ranking: WR1 | Age 26 | Team: Vikings</div>
-    <div class="agent-line">Agent: <span id="agentName">Marcus Delacroix</span> - <span class="personality" id="agentPersonality">Cutthroat</span></div>
-    <div class="current-deal">Current deal: <span>3 years, $42,000,000/yr</span> | 1 year left | No-trade clause | $20,000,000 guaranteed</div>
+  <div class="features">
+    <div class="feature"><strong>Agent Personalities</strong>Cutthroat, family man, gambler, lawyer, mentor — every agent plays different.</div>
+    <div class="feature"><strong>Public Offer Feed</strong>Every team's offer is posted for all to see. Match it, top it, or bluff.</div>
+    <div class="feature"><strong>24-Hour Player Clock</strong>The player decides when time's up, not the fastest bidder.</div>
+    <div class="feature"><strong>Real Contract Math</strong>Prorated bonuses, dead money, void years, restructures, deferrals.</div>
+    <div class="feature"><strong>$301M Salary Cap</strong>League-wide cap with per-team tracking and room to spare.</div>
+    <div class="feature"><strong>Contender Factor</strong>Agents weigh your team's playoff odds before they talk numbers.</div>
   </div>
-  <div class="offer-panel">
-    <h2>Your Offer</h2>
-    <div class="field-row">
-      <div class="field"><label>Years</label><select id="years"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
-      <div class="field"><label>Base Salary</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="base" value="38000000" min="1000000" step="1000000"></div></div>
-      <div class="field"><label>Signing Bonus</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="bonus" value="15000000" min="0" step="1000000"></div></div>
-      <div class="field"><label>Guaranteed</label><div class="input-wrap"><span class="prefix">$</span><input type="number" id="guaranteed" value="60000000" min="0" step="1000000"></div></div>
-    </div>
-    <div class="toggle-row"><input type="checkbox" id="noTrade"><label for="noTrade">No-trade clause</label></div>
-    <div class="bonus-group">
-      <div class="pos-label">Quarterback Bonuses</div>
-      <div class="bonus-options">
-        <label><input type="checkbox" class="bonus-cb" value="4000pass" data-amount="5000000">4,000-yard passing season - $5,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="20tdpass" data-amount="4000000">20 TD passes - $4,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="30tdpass" data-amount="8000000">30 TD passes - $8,000,000</label>
-      </div>
-    </div>
-    <div class="bonus-group">
-      <div class="pos-label">Running Back Bonuses</div>
-      <div class="bonus-options">
-        <label><input type="checkbox" class="bonus-cb" value="300carry" data-amount="4000000">300 carries - $4,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="1200rush" data-amount="5000000">1,200 rushing yards - $5,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="15rbtd" data-amount="3000000">15 rushing TDs - $3,000,000</label>
-      </div>
-    </div>
-    <div class="bonus-group">
-      <div class="pos-label">Wide Receiver Bonuses</div>
-      <div class="bonus-options">
-        <label><input type="checkbox" class="bonus-cb" value="100rec" data-amount="5000000">100 receptions - $5,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="150rec" data-amount="10000000">150 receptions - $10,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="10td" data-amount="3000000">10 TDs - $3,000,000</label>
-        <label><input type="checkbox" class="bonus-cb" value="20td" data-amount="6000000">20 TDs - $6,000,000</label>
-      </div>
-    </div>
-  </div>
-  <div class="breakdown">
-    <h2>Year-by-Year Breakdown</h2>
-    <div class="year-grid" id="yearGrid"></div>
-  </div>
-  <div class="agent-response" id="agentBox">
-    <h2>Agent Response</h2>
-    <div class="reasoning" id="agentReasoning"></div>
-    <div class="counter-terms" id="agentCounter"></div>
-    <div class="agent-bonus" id="agentBonus"></div>
-  </div>
-  <div class="buttons">
-    <button class="btn btn-accept" id="btnAccept" onclick="makeDecision('accept')">Accept</button>
-    <button class="btn btn-counter" id="btnCounter" onclick="makeDecision('counter')">Counter</button>
-    <button class="btn btn-pass" id="btnPass" onclick="makeDecision('pass')">Pass</button>
-  </div>
-  <div class="result" id="resultBox"></div>
-  <div class="restructure-panel" id="restructurePanel">
-    <h2>Restructure Menu</h2>
-    <div class="restructure-buttons">
-      <button class="btn-restructure" onclick="restructure('void')">Void Year</button>
-      <button class="btn-restructure" onclick="restructure('roll')">Roll Bonus into Salary</button>
-      <button class="btn-restructure" onclick="restructure('shorten')">Shorten Term</button>
-      <button class="btn-restructure" onclick="restructure('push')">Push Money Back</button>
-      <button class="btn-restructure" onclick="restructure('defer')">Defer Signing Bonus</button>
-      <button class="btn-restructure" onclick="restructure('hybrid')">Hybrid</button>
-    </div>
-    <div class="year-grid" id="dealGrid"></div>
-    <div class="restructure-note" id="restructureNote"></div>
-  </div>
-  <div class="roster-note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
-<script src="script.js"></script>
+  <div class="version">11.26.26 V0.08</div>
+  <div class="note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
 </body>
 </html>
