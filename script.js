@@ -1,5 +1,6 @@
 var capTotal = 200000000;
 var capUsed = 213000000;
+var deal = null;
 function fmt(n) {
   return "$" + n.toLocaleString("en-US");
 }
@@ -55,7 +56,8 @@ function makeDecision(decision) {
   agentBox.style.display = "block";
   resultBox.style.display = "block";
   if (decision === "accept") {
-    capUsed = capUsed + yearHit;
+    deal = { years: years, base: base, bonus: bonus, guaranteed: guaranteed, noTrade: noTrade, bonusTexts: bonusTexts, voidYears: 0, rolledYear: null, deferred: false };
+    capUsed = 203000000 + yearHit;
     document.getElementById("capUsed").textContent = fmt(capUsed);
     var remEl = document.getElementById("capRemaining");
     remEl.textContent = fmt(capTotal - capUsed);
@@ -72,6 +74,8 @@ function makeDecision(decision) {
     document.getElementById("btnAccept").disabled = true;
     document.getElementById("btnCounter").disabled = true;
     document.getElementById("btnPass").disabled = true;
+    document.getElementById("restructurePanel").style.display = "block";
+    renderDealGrid();
   } else if (decision === "counter") {
     var counterYears = Math.min(years + 1, 5);
     var counterBase = base + 4000000;
@@ -89,5 +93,91 @@ function makeDecision(decision) {
     document.getElementById("btnAccept").disabled = true;
     document.getElementById("btnCounter").disabled = true;
     document.getElementById("btnPass").disabled = true;
+  }
+}
+function renderDealGrid() {
+  if (!deal) return;
+  var grid = document.getElementById("dealGrid");
+  grid.innerHTML = "";
+  var prorated = deal.deferred ? 0 : (deal.bonus / deal.years);
+  var rolled = deal.rolledYear;
+  for (var i = 1; i <= deal.years; i++) {
+    var amt = deal.base + prorated;
+    if (rolled === i) amt += deal.bonus;
+    var box = document.createElement("div");
+    box.className = "year-box";
+    var label = "Year " + i;
+    if (rolled === i) label += " (bonus rolled)";
+    box.innerHTML = "<div class=\"yr\">" + label + "</div><div class=\"amt\">" + fmt(amt) + "</div>";
+    grid.appendChild(box);
+  }
+  for (var v = 0; v < deal.voidYears; v++) {
+    var vbox = document.createElement("div");
+    vbox.className = "year-box";
+    vbox.innerHTML = "<div class=\"yr\">Void " + (v + 1) + "</div><div class=\"amt\">$0</div><div class=\"bonus-part\">dead cap</div>";
+    grid.appendChild(vbox);
+  }
+}
+function restructure(action) {
+  if (!deal) return;
+  if (action === "void") {
+    deal.voidYears++;
+    renderDealGrid();
+    document.getElementById("restructureNote").textContent = "Added void year " + deal.voidYears + ". Cap hit unchanged, term extended. Dead cap: $0 this year.";
+  } else if (action === "roll") {
+    if (deal.rolledYear) { document.getElementById("restructureNote").textContent = "Bonus already rolled into year " + deal.rolledYear + "."; return; }
+    deal.rolledYear = 1;
+    deal.deferred = false;
+    var newHit = deal.base + deal.bonus;
+    capUsed = 203000000 + newHit;
+    document.getElementById("capUsed").textContent = fmt(capUsed);
+    var remEl = document.getElementById("capRemaining");
+    remEl.textContent = fmt(capTotal - capUsed);
+    remEl.className = (capTotal - capUsed) < 0 ? "negative" : "remaining";
+    renderDealGrid();
+    document.getElementById("restructureNote").textContent = "Rolled " + fmt(deal.bonus) + " bonus into year 1. This year's hit is now " + fmt(newHit) + ". Future years drop to " + fmt(deal.base) + "/yr.";
+  } else if (action === "shorten") {
+    if (deal.years <= 1) { document.getElementById("restructureNote").textContent = "Can't shorten below 1 year."; return; }
+    deal.years--;
+    if (!deal.deferred) {
+      var hit = deal.base + (deal.bonus / deal.years);
+      capUsed = 203000000 + hit;
+      document.getElementById("capUsed").textContent = fmt(capUsed);
+      var remEl2 = document.getElementById("capRemaining");
+      remEl2.textContent = fmt(capTotal - capUsed);
+      remEl2.className = (capTotal - capUsed) < 0 ? "negative" : "remaining";
+    }
+    renderDealGrid();
+    document.getElementById("restructureNote").textContent = "Shortened to " + deal.years + " years. Prorated bonus now " + fmt(deal.bonus / deal.years) + "/yr.";
+  } else if (action === "push") {
+    var amt = 5000000;
+    deal.base = deal.base - amt;
+    renderDealGrid();
+    document.getElementById("restructureNote").textContent = "Pushed " + fmt(amt) + " from year 1 into year " + deal.years + ". Year 1 hit now " + fmt(deal.base + (deal.deferred ? 0 : deal.bonus / deal.years)) + ".";
+  } else if (action === "defer") {
+    deal.deferred = !deal.deferred;
+    if (deal.deferred) {
+      capUsed = 203000000 + deal.base;
+      document.getElementById("restructureNote").textContent = "Bonus deferred. This year's hit is just base salary: " + fmt(deal.base) + ". " + fmt(deal.bonus) + " spreads across remaining years.";
+    } else {
+      capUsed = 203000000 + deal.base + (deal.bonus / deal.years);
+      document.getElementById("restructureNote").textContent = "Deferral removed. Bonus prorated again: " + fmt(deal.bonus / deal.years) + "/yr.";
+    }
+    document.getElementById("capUsed").textContent = fmt(capUsed);
+    var remEl3 = document.getElementById("capRemaining");
+    remEl3.textContent = fmt(capTotal - capUsed);
+    remEl3.className = (capTotal - capUsed) < 0 ? "negative" : "remaining";
+    renderDealGrid();
+  } else if (action === "hybrid") {
+    deal.voidYears++;
+    if (!deal.rolledYear) { deal.rolledYear = deal.years; }
+    var hHit = deal.base + deal.bonus;
+    capUsed = 203000000 + hHit;
+    document.getElementById("capUsed").textContent = fmt(capUsed);
+    var remEl4 = document.getElementById("capRemaining");
+    remEl4.textContent = fmt(capTotal - capUsed);
+    remEl4.className = (capTotal - capUsed) < 0 ? "negative" : "remaining";
+    renderDealGrid();
+    document.getElementById("restructureNote").textContent = "Hybrid: void year added + bonus rolled into final year. This year's hit: " + fmt(hHit) + ".";
   }
 }
