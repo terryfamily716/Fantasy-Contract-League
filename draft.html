@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - Draft Board - V0.08</title>
+<title>Fantasy GM versus Agents - Draft Board - V0.09</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
@@ -14,6 +14,7 @@
   .home-link { color: #60a5fa; font-size: 13px; text-decoration: none; }
   .cap-tracker { background: #1a1f2e; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
   .cap-tracker .remaining { color: #60a5fa; font-weight: bold; }
+  .cap-tracker .negative { color: #ef4444; font-weight: bold; }
   .nomination-card { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #ef4444; }
   .nomination-card h2 { font-size: 15px; color: #ef4444; margin-bottom: 8px; }
   .nomination-card .player-name { font-size: 20px; font-weight: bold; }
@@ -48,6 +49,7 @@
   .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
   .btn-submit { background: #3b82f6; color: #fff; }
   .btn-pass { background: #475569; color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
 </style>
 </head>
@@ -59,7 +61,7 @@
     </div>
     <div style="text-align:right">
       <a class="home-link" href="index.html">Back to Home</a>
-      <div class="version">11.26.26 V0.08</div>
+      <div class="version">11.26.26 V0.09</div>
     </div>
   </div>
   <div class="cap-tracker">League Cap: $301,000,000 | Your Team Used: <span id="capUsed">$0</span> | Remaining: <span class="remaining" id="capRemaining">$301,000,000</span></div>
@@ -73,9 +75,11 @@
   <div class="teams-grid" id="teamsGrid"></div>
   <div class="offer-feed">
     <h2>Public Offer Feed</h2>
-    <div class="offer-row"><span class="team">Kansas City Chiefs</span><span class="terms">5 yrs, $30M/yr, $20M bonus, $90M guaranteed, no-trade</span><span class="time-ago">2 min ago</span></div>
-    <div class="offer-row"><span class="team">Buffalo Bills</span><span class="terms">4 yrs, $29M/yr, $18M bonus, $75M guaranteed</span><span class="time-ago">5 min ago</span></div>
-    <div class="offer-row"><span class="team">Your Team</span><span class="terms">4 yrs, $25M/yr, $15M bonus, $60M guaranteed</span><span class="time-ago">12 min ago</span></div>
+    <div id="offerFeed">
+      <div class="offer-row"><span class="team">Kansas City Chiefs</span><span class="terms">5 yrs, $30M/yr, $20M bonus, $90M guaranteed, no-trade</span><span class="time-ago">2 min ago</span></div>
+      <div class="offer-row"><span class="team">Buffalo Bills</span><span class="terms">4 yrs, $29M/yr, $18M bonus, $75M guaranteed</span><span class="time-ago">5 min ago</span></div>
+      <div class="offer-row"><span class="team">Your Team</span><span class="terms">4 yrs, $25M/yr, $15M bonus, $60M guaranteed</span><span class="time-ago">12 min ago</span></div>
+    </div>
   </div>
   <div class="your-offer">
     <h2>Your Offer</h2>
@@ -87,8 +91,8 @@
     </div>
     <div class="toggle-row"><input type="checkbox" id="noTrade"><label for="noTrade">No-trade clause</label></div>
     <div class="buttons">
-      <button class="btn btn-submit" onclick="submitOffer()">Submit Offer</button>
-      <button class="btn btn-pass" onclick="passOnPlayer()">Pass</button>
+      <button class="btn btn-submit" id="btnSubmit" onclick="submitOffer()">Submit Offer</button>
+      <button class="btn btn-pass" id="btnPass" onclick="passOnPlayer()">Pass</button>
     </div>
   </div>
   <div class="note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
@@ -108,15 +112,52 @@
     var h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
     document.getElementById("clock").textContent = (h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
   }, 1000);
+  function fmt(n) {
+    return "$" + n.toLocaleString("en-US");
+  }
+  function timeAgo(date) {
+    var diff = Math.floor((new Date() - date) / 1000);
+    if (diff < 60) return "just now";
+    if (diff < 3600) return Math.floor(diff/60) + " min ago";
+    return Math.floor(diff/3600) + " hr ago";
+  }
   function submitOffer() {
     var base = parseFloat(document.getElementById("base").value) || 0;
     var bonus = parseFloat(document.getElementById("bonus").value) || 0;
     var years = parseInt(document.getElementById("years").value) || 1;
+    var guaranteed = parseFloat(document.getElementById("guaranteed").value) || 0;
+    var noTrade = document.getElementById("noTrade").checked;
     var hit = base + (bonus / years);
-    alert("Offer submitted: " + years + " years at $" + base.toLocaleString() + "/yr with $" + bonus.toLocaleString() + " bonus. Cap hit: $" + hit.toLocaleString() + "/yr. Posted to public feed.");
+    var summary = years + " yrs, " + fmt(base) + "/yr, " + fmt(bonus) + " bonus, " + fmt(guaranteed) + " guaranteed" + (noTrade ? ", no-trade" : "");
+    if (!confirm("Are you sure? You're offering " + summary + ". Cap hit: " + fmt(hit) + "/yr. Post to public feed?")) {
+      return;
+    }
+    var feed = document.getElementById("offerFeed");
+    var row = document.createElement("div");
+    row.className = "offer-row";
+    row.innerHTML = "<span class=\"team\">Your Team</span><span class=\"terms\">" + summary + "</span><span class=\"time-ago\">just now</span>";
+    feed.insertBefore(row, feed.firstChild);
+    var used = parseFloat(document.getElementById("capUsed").textContent.replace(/[^0-9.]/g,"")) || 0;
+    var newUsed = used + hit;
+    document.getElementById("capUsed").textContent = fmt(newUsed);
+    var rem = 301000000 - newUsed;
+    var remEl = document.getElementById("capRemaining");
+    remEl.textContent = fmt(rem);
+    remEl.className = rem < 0 ? "negative" : "remaining";
+    document.getElementById("btnSubmit").disabled = true;
+    document.getElementById("btnPass").disabled = true;
   }
   function passOnPlayer() {
-    alert("You passed on Justin Jefferson. He's still available to the other 11 teams.");
+    if (!confirm("Pass on Justin Jefferson? He's still available to the other 11 teams.")) {
+      return;
+    }
+    document.getElementById("btnSubmit").disabled = true;
+    document.getElementById("btnPass").disabled = true;
+    var feed = document.getElementById("offerFeed");
+    var row = document.createElement("div");
+    row.className = "offer-row";
+    row.innerHTML = "<span class=\"team\">Your Team</span><span class=\"terms\">Passed</span><span class=\"time-ago\">just now</span>";
+    feed.insertBefore(row, feed.firstChild);
   }
 </script>
 </body>
