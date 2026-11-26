@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - V0.04</title>
+<title>Fantasy GM versus Agents - V0.05</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
@@ -32,21 +32,23 @@
   .field select { width: 100%; background: #0f1419; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 8px; font-size: 14px; }
   .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
   .toggle-row input { width: 18px; height: 18px; }
-  .bonus-group { margin-bottom: 12px; }
-  .bonus-group label { display: block; font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+  .bonus-group { margin-bottom: 14px; }
+  .bonus-group .pos-label { display: block; font-size: 12px; color: #3b82f6; margin-bottom: 6px; font-weight: bold; text-transform: uppercase; }
   .bonus-options { display: flex; flex-direction: column; gap: 6px; }
   .bonus-options label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; text-transform: none; cursor: pointer; }
   .bonus-options input { width: 18px; height: 18px; }
   .breakdown { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
   .breakdown h2 { font-size: 15px; margin-bottom: 12px; color: #94a3b8; }
-  .year-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+  .year-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
   .year-box { background: #0f1419; border-radius: 6px; padding: 10px; text-align: center; border: 1px solid #334155; }
   .year-box .yr { font-size: 11px; color: #64748b; text-transform: uppercase; }
   .year-box .amt { font-size: 14px; color: #60a5fa; font-weight: bold; margin-top: 4px; }
+  .year-box .bonus-part { font-size: 10px; color: #94a3b8; margin-top: 2px; }
   .agent-response { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #ef4444; display: none; }
   .agent-response h2 { font-size: 15px; margin-bottom: 8px; color: #ef4444; }
   .agent-response .reasoning { font-size: 13px; color: #cbd5e1; font-style: italic; }
   .agent-response .counter-terms { margin-top: 10px; font-size: 13px; color: #60a5fa; }
+  .agent-response .agent-bonus { margin-top: 8px; font-size: 13px; color: #f59e0b; }
   .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
   .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
   .btn-accept { background: #22c55e; color: #fff; }
@@ -65,7 +67,7 @@
       <h1>Fantasy GM versus Agents</h1>
       <div class="subtitle">Fantasy Football</div>
     </div>
-    <div class="version">11.26.26 V0.04</div>
+    <div class="version">11.26.26 V0.05</div>
   </div>
   <div class="cap-tracker">Salary Cap: $200,000,000 | Used: <span id="capUsed">$213,000,000</span> | Remaining: <span class="negative" id="capRemaining">-$13,000,000</span></div>
   <div class="player-card">
@@ -84,7 +86,23 @@
     </div>
     <div class="toggle-row"><input type="checkbox" id="noTrade"><label for="noTrade">No-trade clause</label></div>
     <div class="bonus-group">
-      <label>Performance Bonuses</label>
+      <div class="pos-label">Quarterback Bonuses</div>
+      <div class="bonus-options">
+        <label><input type="checkbox" class="bonus-cb" value="4000pass" data-amount="5000000">4,000-yard passing season - $5,000,000</label>
+        <label><input type="checkbox" class="bonus-cb" value="20tdpass" data-amount="4000000">20 TD passes - $4,000,000</label>
+        <label><input type="checkbox" class="bonus-cb" value="30tdpass" data-amount="8000000">30 TD passes - $8,000,000</label>
+      </div>
+    </div>
+    <div class="bonus-group">
+      <div class="pos-label">Running Back Bonuses</div>
+      <div class="bonus-options">
+        <label><input type="checkbox" class="bonus-cb" value="300carry" data-amount="4000000">300 carries - $4,000,000</label>
+        <label><input type="checkbox" class="bonus-cb" value="1200rush" data-amount="5000000">1,200 rushing yards - $5,000,000</label>
+        <label><input type="checkbox" class="bonus-cb" value="15rbtd" data-amount="3000000">15 rushing TDs - $3,000,000</label>
+      </div>
+    </div>
+    <div class="bonus-group">
+      <div class="pos-label">Wide Receiver Bonuses</div>
       <div class="bonus-options">
         <label><input type="checkbox" class="bonus-cb" value="100rec" data-amount="5000000">100 receptions - $5,000,000</label>
         <label><input type="checkbox" class="bonus-cb" value="150rec" data-amount="10000000">150 receptions - $10,000,000</label>
@@ -101,6 +119,7 @@
     <h2>Agent Response</h2>
     <div class="reasoning" id="agentReasoning"></div>
     <div class="counter-terms" id="agentCounter"></div>
+    <div class="agent-bonus" id="agentBonus"></div>
   </div>
   <div class="buttons">
     <button class="btn btn-accept" id="btnAccept" onclick="makeDecision('accept')">Accept</button>
@@ -137,7 +156,7 @@
       var amt = base + proratedBonus;
       var box = document.createElement("div");
       box.className = "year-box";
-      box.innerHTML = "<div class=\"yr\">Year " + i + "</div><div class=\"amt\">" + fmt(amt) + "</div><div class=\"yr\">incl. " + fmt(proratedBonus) + " bonus</div>";
+      box.innerHTML = "<div class=\"yr\">Year " + i + "</div><div class=\"amt\">" + fmt(amt) + "</div><div class=\"bonus-part\">incl. " + fmt(proratedBonus) + " prorated bonus</div>";
       grid.appendChild(box);
     }
   }
@@ -155,7 +174,10 @@
     var bonusTexts = [];
     var bonusTotal = 0;
     checked.forEach(function(cb) { bonusTexts.push(cb.parentElement.textContent.trim()); bonusTotal += parseFloat(cb.getAttribute("data-amount")); });
-    if (!confirm("Are you sure? You're offering " + years + " years at " + fmt(base) + "/yr with a " + fmt(bonus) + " signing bonus" + (bonusTexts.length ? " and " + bonusTexts.length + " performance bonus" + (bonusTexts.length > 1 ? "es" : "") : "") + ". Total cap hit: " + fmt((base * years) + bonus) + ".")) {
+    var summary = years + " years at " + fmt(base) + "/yr with a " + fmt(bonus) + " signing bonus";
+    if (bonusTexts.length) summary += " and " + bonusTexts.length + " performance bonus" + (bonusTexts.length > 1 ? "es" : "");
+    summary += ". Total cap hit: " + fmt((base * years) + bonus) + ".";
+    if (!confirm("Are you sure? You're offering " + summary)) {
       return;
     }
     var agentBox = document.getElementById("agentBox");
@@ -165,6 +187,7 @@
     if (decision === "accept") {
       document.getElementById("agentReasoning").textContent = "Agent Delacroix: Deal accepted. Jefferson values the guarantee and the competitive window. Cutthroat agents don't bluff twice.";
       document.getElementById("agentCounter").textContent = "Signed: " + years + " years, " + fmt(base) + "/yr base, " + fmt(bonus) + " bonus, " + fmt(guaranteed) + " guaranteed" + (noTrade ? ", no-trade clause" : "") + (bonusTexts.length ? ", bonuses: " + bonusTexts.join(", ") : "") + ".";
+      document.getElementById("agentBonus").textContent = "";
       resultBox.className = "result success";
       resultBox.textContent = "SIGNED. Jefferson is on your roster. Cap updated.";
       document.getElementById("btnAccept").disabled = true;
@@ -175,11 +198,13 @@
       var counterBase = base + 4000000;
       document.getElementById("agentReasoning").textContent = "Agent Delacroix: Close, but Jefferson wants one more year and a bump. He's eyeing a ring and won't leave money on the table for a rebuilding team.";
       document.getElementById("agentCounter").textContent = "Counter: " + counterYears + " years, " + fmt(counterBase) + "/yr, " + fmt(bonus) + " bonus" + (noTrade ? ", no-trade clause included" : "") + ".";
+      document.getElementById("agentBonus").textContent = "Agent bonus demand: 100 receptions - $5,000,000. Delacroix wants it written in before he talks numbers.";
       resultBox.className = "result fail";
       resultBox.textContent = "Counter received. Revise your offer or pass.";
     } else {
       document.getElementById("agentReasoning").textContent = "Agent Delacroix: Jefferson declines. He'd rather bet on himself with a contender. Delacroix is already texting other GMs.";
       document.getElementById("agentCounter").textContent = "Player hits the open market. Other teams can now bid.";
+      document.getElementById("agentBonus").textContent = "";
       resultBox.className = "result fail";
       resultBox.textContent = "Passed. Jefferson is available to other teams.";
       document.getElementById("btnAccept").disabled = true;
