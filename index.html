@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - V0.05</title>
+<title>Fantasy GM versus Agents - V0.06</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
@@ -67,12 +67,12 @@
       <h1>Fantasy GM versus Agents</h1>
       <div class="subtitle">Fantasy Football</div>
     </div>
-    <div class="version">11.26.26 V0.05</div>
+    <div class="version">11.26.26 V0.06</div>
   </div>
   <div class="cap-tracker">Salary Cap: $200,000,000 | Used: <span id="capUsed">$213,000,000</span> | Remaining: <span class="negative" id="capRemaining">-$13,000,000</span></div>
   <div class="player-card">
     <div class="name" id="playerName">Justin Jefferson, WR</div>
-    <div class="meta">WR1 | Age 26 | Team: Vikings</div>
+    <div class="meta">Position Ranking: WR1 | Age 26 | Team: Vikings</div>
     <div class="agent-line">Agent: <span id="agentName">Marcus Delacroix</span> - <span class="personality" id="agentPersonality">Cutthroat</span></div>
     <div class="current-deal">Current deal: <span>3 years, $42,000,000/yr</span> | 1 year left | No-trade clause | $20,000,000 guaranteed</div>
   </div>
@@ -185,6 +185,17 @@
     agentBox.style.display = "block";
     resultBox.style.display = "block";
     if (decision === "accept") {
+      capUsed = capUsed + (base * years) + bonus;
+      document.getElementById("capUsed").textContent = fmt(capUsed);
+      var remEl = document.getElementById("capRemaining");
+      remEl.textContent = fmt(capTotal - capUsed);
+      remEl.className = (capTotal - capUsed) < 0 ? "negative" : "remaining";
+      var dealSpan = document.querySelector(".current-deal span");
+      dealSpan.textContent = years + " years, " + fmt(base) + "/yr";
+      var dealExtra = " | " + (5 - years) + " year" + ((5 - years) !== 1 ? "s" : "") + " left";
+      dealExtra += noTrade ? " | No-trade clause" : "";
+      dealExtra += " | " + fmt(guaranteed) + " guaranteed";
+      document.querySelector(".current-deal").innerHTML = "Current deal: <span>" + dealSpan.textContent + "</span>" + dealExtra;
       document.getElementById("agentReasoning").textContent = "Agent Delacroix: Deal accepted. Jefferson values the guarantee and the competitive window. Cutthroat agents don't bluff twice.";
       document.getElementById("agentCounter").textContent = "Signed: " + years + " years, " + fmt(base) + "/yr base, " + fmt(bonus) + " bonus, " + fmt(guaranteed) + " guaranteed" + (noTrade ? ", no-trade clause" : "") + (bonusTexts.length ? ", bonuses: " + bonusTexts.join(", ") : "") + ".";
       document.getElementById("agentBonus").textContent = "";
