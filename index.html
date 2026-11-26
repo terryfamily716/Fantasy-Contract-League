@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy Football Agent - V0.03</title>
+<title>Fantasy GM versus Agents - V0.04</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .header h1 { font-size: 22px; color: #3b82f6; }
+  .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 2px; }
   .version { color: #FFD700; font-size: 12px; }
   .cap-tracker { background: #1a1f2e; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
   .cap-tracker .remaining { color: #60a5fa; font-weight: bold; }
@@ -60,8 +61,11 @@
 </head>
 <body>
   <div class="header">
-    <h1>Fantasy Football Agent</h1>
-    <div class="version">11.26.26 V0.03</div>
+    <div>
+      <h1>Fantasy GM versus Agents</h1>
+      <div class="subtitle">Fantasy Football</div>
+    </div>
+    <div class="version">11.26.26 V0.04</div>
   </div>
   <div class="cap-tracker">Salary Cap: $200,000,000 | Used: <span id="capUsed">$213,000,000</span> | Remaining: <span class="negative" id="capRemaining">-$13,000,000</span></div>
   <div class="player-card">
@@ -128,12 +132,12 @@
     var years = parseInt(document.getElementById("years").value) || 1;
     var grid = document.getElementById("yearGrid");
     grid.innerHTML = "";
+    var proratedBonus = bonus / years;
     for (var i = 1; i <= years; i++) {
-      var amt = base;
-      if (i === 1) amt += bonus;
+      var amt = base + proratedBonus;
       var box = document.createElement("div");
       box.className = "year-box";
-      box.innerHTML = "<div class=\"yr\">Year " + i + "</div><div class=\"amt\">" + fmt(amt) + "</div>";
+      box.innerHTML = "<div class=\"yr\">Year " + i + "</div><div class=\"amt\">" + fmt(amt) + "</div><div class=\"yr\">incl. " + fmt(proratedBonus) + " bonus</div>";
       grid.appendChild(box);
     }
   }
@@ -149,7 +153,11 @@
     var noTrade = document.getElementById("noTrade").checked;
     var checked = document.querySelectorAll(".bonus-cb:checked");
     var bonusTexts = [];
-    checked.forEach(function(cb) { bonusTexts.push(cb.parentElement.textContent.trim()); });
+    var bonusTotal = 0;
+    checked.forEach(function(cb) { bonusTexts.push(cb.parentElement.textContent.trim()); bonusTotal += parseFloat(cb.getAttribute("data-amount")); });
+    if (!confirm("Are you sure? You're offering " + years + " years at " + fmt(base) + "/yr with a " + fmt(bonus) + " signing bonus" + (bonusTexts.length ? " and " + bonusTexts.length + " performance bonus" + (bonusTexts.length > 1 ? "es" : "") : "") + ". Total cap hit: " + fmt((base * years) + bonus) + ".")) {
+      return;
+    }
     var agentBox = document.getElementById("agentBox");
     var resultBox = document.getElementById("resultBox");
     agentBox.style.display = "block";
