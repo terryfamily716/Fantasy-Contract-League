@@ -7,7 +7,7 @@ function updateCap() {
   var base = parseFloat(document.getElementById("base").value) || 0;
   var bonus = parseFloat(document.getElementById("bonus").value) || 0;
   var years = parseInt(document.getElementById("years").value) || 1;
-  var total = (base * years) + bonus;
+  var total = base + (bonus / years);
   document.getElementById("capUsed").textContent = fmt(capUsed + total);
   var remEl = document.getElementById("capRemaining");
   remEl.textContent = fmt(capTotal - capUsed - total);
@@ -43,9 +43,10 @@ function makeDecision(decision) {
   var bonusTexts = [];
   var bonusTotal = 0;
   checked.forEach(function(cb) { bonusTexts.push(cb.parentElement.textContent.trim()); bonusTotal += parseFloat(cb.getAttribute("data-amount")); });
+  var yearHit = base + (bonus / years);
   var summary = years + " years at " + fmt(base) + "/yr with a " + fmt(bonus) + " signing bonus";
   if (bonusTexts.length) summary += " and " + bonusTexts.length + " performance bonus" + (bonusTexts.length > 1 ? "es" : "");
-  summary += ". Total cap hit: " + fmt((base * years) + bonus) + ".";
+  summary += ". Cap hit per year: " + fmt(yearHit) + ".";
   if (!confirm("Are you sure? You're offering " + summary)) {
     return;
   }
@@ -54,7 +55,7 @@ function makeDecision(decision) {
   agentBox.style.display = "block";
   resultBox.style.display = "block";
   if (decision === "accept") {
-    capUsed = capUsed + (base * years) + bonus;
+    capUsed = capUsed + yearHit;
     document.getElementById("capUsed").textContent = fmt(capUsed);
     var remEl = document.getElementById("capRemaining");
     remEl.textContent = fmt(capTotal - capUsed);
