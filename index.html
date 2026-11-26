@@ -6,38 +6,39 @@
 <title>Fantasy Football Agent - V0.01</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f1419; color: #e0e0e0; font-family: Arial, sans-serif; padding: 20px; }
-  .header { text-align: center; margin-bottom: 20px; }
-  .header h1 { color: #3b82f6; font-size: 28px; }
-  .header .version { color: #FFD700; font-size: 12px; margin-top: 4px; }
-  .card { background: #1a1f2e; border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a3142; }
-  .card h2 { color: #60a5fa; font-size: 18px; margin-bottom: 12px; }
-  .player-info { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-  .info-item { flex: 1; min-width: 120px; }
-  .info-item .label { color: #888; font-size: 12px; }
-  .info-item .value { color: #fff; font-size: 16px; font-weight: bold; }
-  .contract-row { display: flex; flex-wrap: wrap; gap: 15px; }
-  .field { flex: 1; min-width: 140px; }
-  .field label { display: block; color: #888; font-size: 12px; margin-bottom: 4px; }
-  .field input, .field select { width: 100%; background: #0f1419; border: 1px solid #3b82f6; color: #fff; padding: 8px; border-radius: 5px; font-size: 14px; }
-  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .header h1 { font-size: 22px; color: #3b82f6; }
+  .version { color: #FFD700; font-size: 12px; }
+  .cap-tracker { background: #1a1f2e; border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .cap-tracker .remaining { color: #60a5fa; font-weight: bold; }
+  .player-card { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #3b82f6; }
+  .player-card .name { font-size: 20px; font-weight: bold; }
+  .player-card .meta { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+  .current-deal { margin-top: 10px; font-size: 13px; color: #cbd5e1; }
+  .current-deal span { color: #60a5fa; }
+  .offer-panel { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .offer-panel h2 { font-size: 15px; margin-bottom: 12px; color: #94a3b8; }
+  .field-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 120px; }
+  .field label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+  .field input, .field select { width: 100%; background: #0f1419; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 8px; font-size: 14px; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
   .toggle-row input { width: 18px; height: 18px; }
-  .toggle-row label { color: #e0e0e0; font-size: 14px; }
-  .cap-bar { background: #0f1419; border-radius: 5px; height: 24px; margin: 10px 0; overflow: hidden; border: 1px solid #2a3142; }
-  .cap-fill { background: linear-gradient(90deg, #3b82f6, #60a5fa); height: 100%; transition: width 0.3s; }
-  .cap-text { text-align: center; font-size: 13px; margin-top: 4px; color: #aaa; }
-  .agent-box { background: #241a2e; border: 1px solid #7c3aed; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
-  .agent-box h3 { color: #a78bfa; font-size: 16px; margin-bottom: 8px; }
-  .agent-reasoning { color: #c4b5fd; font-size: 14px; font-style: italic; }
+  .agent-response { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #ef4444; display: none; }
+  .agent-response h2 { font-size: 15px; margin-bottom: 8px; color: #ef4444; }
+  .agent-response .reasoning { font-size: 13px; color: #cbd5e1; font-style: italic; }
+  .agent-response .counter-terms { margin-top: 10px; font-size: 13px; color: #60a5fa; }
   .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn { padding: 12px 24px; border-radius: 5px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
   .btn-accept { background: #22c55e; color: #fff; }
-  .btn-reject { background: #ef4444; color: #fff; }
-  .btn-revise { background: #3b82f6; color: #fff; }
-  .btn:hover { opacity: 0.85; }
-  .result { margin-top: 15px; padding: 12px; border-radius: 5px; font-size: 14px; display: none; }
-  .result.success { background: #14532d; color: #86efac; display: block; }
-  .result.fail { background: #451a03; color: #fdba74; display: block; }
+  .btn-counter { background: #f59e0b; color: #fff; }
+  .btn-pass { background: #475569; color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .result { margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 14px; display: none; }
+  .result.success { background: #14532d; color: #86efac; }
+  .result.fail { background: #450a0a; color: #fca5a5; }
+  .roster-note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
 </style>
 </head>
 <body>
@@ -45,96 +46,88 @@
     <h1>Fantasy Football Agent</h1>
     <div class="version">11.26.26 V0.01</div>
   </div>
-
-  <div class="card">
-    <h2>Player Card</h2>
-    <div class="player-info">
-      <div class="info-item"><div class="label">Name</div><div class="value" id="playerName">Marcus Johnson</div></div>
-      <div class="info-item"><div class="label">Position</div><div class="value" id="playerPos">QB</div></div>
-      <div class="info-item"><div class="label">Overall</div><div class="value" id="playerOvr">94</div></div>
-      <div class="info-item"><div class="label">Team</div><div class="value" id="playerTeam">Rams</div></div>
-    </div>
-    <div class="contract-row">
-      <div class="info-item"><div class="label">Years Left</div><div class="value" id="yearsLeft">2</div></div>
-      <div class="info-item"><div class="label">Base Salary</div><div class="value" id="curSalary">$18M</div></div>
-      <div class="info-item"><div class="label">Signing Bonus</div><div class="value" id="curBonus">$10M</div></div>
-      <div class="info-item"><div class="label">No-Trade</div><div class="value" id="curNT">Yes</div></div>
-    </div>
+  <div class="cap-tracker">Salary Cap: $200M | Used: <span id="capUsed">$84M</span> | Remaining: <span class="remaining" id="capRemaining">$116M</span></div>
+  <div class="player-card">
+    <div class="name" id="playerName">Justin Jefferson, WR</div>
+    <div class="meta">Overall 97 | Age 26 | Team: Vikings</div>
+    <div class="current-deal">Current deal: <span>3 years, $42M/yr</span> | 1 year left | No-trade clause</div>
   </div>
-
-  <div class="card">
+  <div class="offer-panel">
     <h2>Your Offer</h2>
-    <div class="contract-row">
-      <div class="field"><label>Term (Years)</label><input type="number" id="offerYears" value="3" min="1" max="5" oninput="updateCap()"></div>
-      <div class="field"><label>Base Salary ($M/yr)</label><input type="number" id="offerSalary" value="16" min="1" max="50" oninput="updateCap()"></div>
-      <div class="field"><label>Signing Bonus ($M)</label><input type="number" id="offerBonus" value="12" min="0" max="40" oninput="updateCap()"></div>
+    <div class="field-row">
+      <div class="field"><label>Years</label><select id="years"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
+      <div class="field"><label>Base Salary ($M/yr)</label><input type="number" id="base" value="38" min="1" max="80"></div>
+      <div class="field"><label>Signing Bonus ($M)</label><input type="number" id="bonus" value="15" min="0" max="60"></div>
     </div>
-    <div class="toggle-row">
-      <input type="checkbox" id="offerNT" checked onchange="updateCap()">
-      <label for="offerNT">No-Trade Clause</label>
-    </div>
-    <div class="cap-bar"><div class="cap-fill" id="capFill" style="width: 45%"></div></div>
-    <div class="cap-text" id="capText">Cap Used: $90M / $200M | Space: $110M</div>
+    <div class="toggle-row"><input type="checkbox" id="noTrade"><label for="noTrade">No-trade clause</label></div>
+    <div class="toggle-row"><input type="checkbox" id="proBowl"><label for="proBowl">Pro Bowl bonus ($2M)</label></div>
+    <div class="toggle-row"><input type="checkbox" id="winBonus"><label for="winBonus">Win bonus ($500K/win)</label></div>
   </div>
-
-  <div class="agent-box">
-    <h3>Agent Response</h3>
-    <div class="agent-reasoning" id="agentReason">The agent is reviewing your offer...</div>
+  <div class="agent-response" id="agentBox">
+    <h2>Agent Response</h2>
+    <div class="reasoning" id="agentReasoning"></div>
+    <div class="counter-terms" id="agentCounter"></div>
   </div>
-
   <div class="buttons">
-    <button class="btn btn-accept" onclick="respond('accept')">Accept</button>
-    <button class="btn btn-reject" onclick="respond('reject')">Reject</button>
-    <button class="btn btn-revise" onclick="respond('revise')">Revise Offer</button>
+    <button class="btn btn-accept" id="btnAccept" onclick="makeDecision('accept')">Accept</button>
+    <button class="btn btn-counter" id="btnCounter" onclick="makeDecision('counter')">Counter</button>
+    <button class="btn btn-pass" id="btnPass" onclick="makeDecision('pass')">Pass</button>
   </div>
   <div class="result" id="resultBox"></div>
-
+  <div class="roster-note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
 <script>
   var capTotal = 200;
-  var capUsed = 90;
-
+  var capUsed = 84;
   function updateCap() {
-    var years = parseInt(document.getElementById("offerYears").value) || 0;
-    var salary = parseInt(document.getElementById("offerSalary").value) || 0;
-    var bonus = parseInt(document.getElementById("offerBonus").value) || 0;
-    var newTotal = capUsed - 18 - 10 + (salary * years) + bonus;
-    var pct = Math.min((newTotal / capTotal) * 100, 100);
-    document.getElementById("capFill").style.width = pct + "%";
-    var space = capTotal - newTotal;
-    document.getElementById("capText").textContent = "Cap Used: $" + newTotal + "M / $200M | Space: $" + space + "M";
-    if (newTotal > capTotal) {
-      document.getElementById("capFill").style.background = "linear-gradient(90deg, #ef4444, #fca5a5)";
-    } else {
-      document.getElementById("capFill").style.background = "linear-gradient(90deg, #3b82f6, #60a5fa)";
-    }
+    var base = parseFloat(document.getElementById("base").value) || 0;
+    var bonus = parseFloat(document.getElementById("bonus").value) || 0;
+    var years = parseInt(document.getElementById("years").value) || 1;
+    var total = (base * years) + bonus;
+    var remaining = capTotal - capUsed - total;
+    document.getElementById("capUsed").textContent = "$" + (capUsed + total) + "M";
+    document.getElementById("capRemaining").textContent = "$" + remaining + "M";
+    document.getElementById("capRemaining").style.color = remaining < 20 ? "#ef4444" : "#60a5fa";
   }
-
-  function respond(action) {
-    var box = document.getElementById("resultBox");
-    var reason = document.getElementById("agentReason");
-    var years = document.getElementById("offerYears").value;
-    var salary = document.getElementById("offerSalary").value;
-    var bonus = document.getElementById("offerBonus").value;
-    var nt = document.getElementById("offerNT").checked;
-    if (action === "accept") {
-      box.className = "result success";
-      box.textContent = "DEAL SIGNED: " + years + " years, $" + salary + "M/yr, $" + bonus + "M bonus" + (nt ? ", no-trade included" : "") + ". Marcus Johnson is yours.";
-      reason.textContent = "Agent: 'The security and the no-trade clause sealed it. He wants to win here.'";
-    } else if (action === "reject") {
-      box.className = "result fail";
-      box.textContent = "REJECTED. The agent walked away. Marcus hits the open market.";
-      reason.textContent = "Agent: 'Not enough money or commitment. He's looking elsewhere.'";
-    } else {
-      box.className = "result";
-      box.style.display = "block";
-      box.style.background = "#1e3a5f";
-      box.style.color = "#93c5fd";
-      box.textContent = "COUNTER: Agent wants 4 years at $17M, $14M bonus, and a no-trade clause. He says playing time on a contender matters more than a bigger check on a loser.";
-      reason.textContent = "Agent: 'He'll take less if the path to a ring is real.'";
-    }
-  }
-
+  ["base", "bonus", "years"].forEach(function(id) {
+    document.getElementById(id).addEventListener("input", updateCap);
+  });
   updateCap();
+  function makeDecision(decision) {
+    var base = parseFloat(document.getElementById("base").value) || 0;
+    var bonus = parseFloat(document.getElementById("bonus").value) || 0;
+    var years = parseInt(document.getElementById("years").value) || 1;
+    var noTrade = document.getElementById("noTrade").checked;
+    var proBowl = document.getElementById("proBowl").checked;
+    var winBonus = document.getElementById("winBonus").checked;
+    var agentBox = document.getElementById("agentBox");
+    var resultBox = document.getElementById("resultBox");
+    agentBox.style.display = "block";
+    resultBox.style.display = "block";
+    if (decision === "accept") {
+      document.getElementById("agentReasoning").textContent = "Agent: Deal accepted. Jefferson values the no-trade security and the competitive window.";
+      document.getElementById("agentCounter").textContent = "Signed: " + years + " years, $" + base + "M/yr base, $" + bonus + "M bonus" + (noTrade ? ", no-trade clause" : "") + (proBowl ? ", $2M Pro Bowl bonus" : "") + (winBonus ? ", $500K/win" : "") + ".";
+      resultBox.className = "result success";
+      resultBox.textContent = "SIGNED. Jefferson is on your roster. Cap updated.";
+      document.getElementById("btnAccept").disabled = true;
+      document.getElementById("btnCounter").disabled = true;
+      document.getElementById("btnPass").disabled = true;
+    } else if (decision === "counter") {
+      var counterYears = Math.min(years + 1, 5);
+      var counterBase = base + 4;
+      document.getElementById("agentReasoning").textContent = "Agent: Close, but Jefferson wants one more year and a bump. He's eyeing a ring and won't leave money on the table for a rebuilding team.";
+      document.getElementById("agentCounter").textContent = "Counter: " + counterYears + " years, $" + counterBase + "M/yr, $" + bonus + "M bonus" + (noTrade ? ", no-trade clause included" : "") + ".";
+      resultBox.className = "result fail";
+      resultBox.textContent = "Counter received. Revise your offer or pass.";
+    } else {
+      document.getElementById("agentReasoning").textContent = "Agent: Jefferson declines. He'd rather bet on himself with a contender.";
+      document.getElementById("agentCounter").textContent = "Player hits the open market. Other teams can now bid.";
+      resultBox.className = "result fail";
+      resultBox.textContent = "Passed. Jefferson is available to other teams.";
+      document.getElementById("btnAccept").disabled = true;
+      document.getElementById("btnCounter").disabled = true;
+      document.getElementById("btnPass").disabled = true;
+    }
+  }
 </script>
 </body>
 </html>
