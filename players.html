@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy GM versus Agents - Player Pool - V0.01</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .header h1 { font-size: 22px; color: #3b82f6; }
+  .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+  .version { color: #FFD700; font-size: 12px; }
+  .home-link { color: #60a5fa; font-size: 13px; text-decoration: none; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters button { background: #1a1f2e; border: 1px solid #334155; color: #94a3b8; padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .filters button.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+  .pool { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .card { background: #1a1f2e; border-radius: 10px; padding: 14px; border: 1px solid #334155; cursor: pointer; transition: border-color 0.2s; }
+  .card:hover { border-color: #3b82f6; }
+  .card .name { font-size: 15px; font-weight: bold; color: #e2e8f0; }
+  .card .pos { font-size: 12px; color: #60a5fa; margin-top: 2px; }
+  .card .team { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .card .age { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .card .salary { font-size: 13px; font-weight: bold; color: #22c55e; margin-top: 8px; }
+  .detail { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .detail.show { display: flex; }
+  .detail-card { background: #1a1f2e; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; border: 1px solid #334155; }
+  .detail-card h2 { font-size: 20px; color: #3b82f6; margin-bottom: 4px; }
+  .detail-card .meta { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+  .detail-card .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 14px; }
+  .detail-card .row .label { color: #64748b; }
+  .detail-card .row .value { color: #e2e8f0; font-weight: bold; }
+  .detail-card .close { margin-top: 16px; background: #475569; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Fantasy GM versus Agents</h1>
+      <div class="subtitle">Player Pool - NFL Rosters</div>
+    </div>
+    <div style="text-align:right">
+      <a class="home-link" href="index.html">Back to Home</a>
+      <div class="version">11.26.26 V0.01</div>
+    </div>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="pool" id="pool"></div>
+  <div class="detail" id="detail">
+    <div class="detail-card">
+      <h2 id="dName"></h2>
+      <div class="meta" id="dMeta"></div>
+      <div class="row"><span class="label">Position</span><span class="value" id="dPos"></span></div>
+      <div class="row"><span class="label">Team</span><span class="value" id="dTeam"></span></div>
+      <div class="row"><span class="label">Age</span><span class="value" id="dAge"></span></div>
+      <div class="row"><span class="label">Expected Salary</span><span class="value" id="dSalary"></span></div>
+      <div class="row"><span class="label">Contract Term</span><span class="value" id="dTerm"></span></div>
+      <div class="row"><span class="label">Agent</span><span class="value" id="dAgent"></span></div>
+      <button class="close" onclick="closeDetail()">Close</button>
+    </div>
+  </div>
+<script src="players.js"></script>
+<script>
+  var agents = ["Marcus Delacroix","Elena Vasquez","Jamal Brooks","Priya Nair","Derek Okafor","Sofia Reyes"];
+  var terms = [1,2,3,4,5];
+  var salaries = {
+    "QB": {min: 8000000, max: 55000000}, "RB": {min: 3000000, max: 30000000},
+    "WR": {min: 3000000, max: 35000000}, "TE": {min: 2500000, max: 20000000},
+    "DE": {min: 4000000, max: 35000000}, "DT": {min: 3000000, max: 30000000},
+    "LB": {min: 3000000, max: 28000000}, "CB": {min: 3000000, max: 30000000},
+    "S": {min: 2500000, max: 25000000}, "OT": {min: 4000000, max: 30000000},
+    "G": {min: 3000000, max: 20000000}
+  };
+  var pool = document.getElementById("pool");
+  var filters = document.getElementById("filters");
+  var positions = ["All","QB","RB","WR","TE","DE","DT","LB","CB","S","OT","G"];
+  var currentFilter = "All";
+  positions.forEach(function(p) {
+    var btn = document.createElement("button");
+    btn.textContent = p;
+    if (p === "All") btn.className = "active";
+    btn.onclick = function() {
+      currentFilter = p;
+      filters.querySelectorAll("button").forEach(function(b) { b.className = ""; });
+      btn.className = "active";
+      renderPool();
+    };
+    filters.appendChild(btn);
+  });
+  function expectedSalary(pos) {
+    var r = salaries[pos] || {min: 2000000, max: 10000000};
+    var val = r.min + Math.random() * (r.max - r.min);
+    return Math.round(val / 1000000) * 1000000;
+  }
+  function fmt(n) { return "$" + n.toLocaleString("en-US"); }
+  function renderPool() {
+    pool.innerHTML = "";
+    playerPool.forEach(function(p, i) {
+      if (currentFilter !== "All" && p.pos !== currentFilter) return;
+      var sal = expectedSalary(p.pos);
+      p._salary = sal;
+      p._agent = agents[i % agents.length];
+      p._term = terms[i % terms.length];
+      var card = document.createElement("div");
+      card.className = "card";
+      card.onclick = function() { showDetail(p); };
+      card.innerHTML = "<div class=\"name\">" + p.name + "</div><div class=\"pos\">" + p.pos + "</div><div class=\"team\">" + p.team + "</div><div class=\"age\">Age " + p.age + "</div><div class=\"salary\">" + fmt(sal) + "</div>";
+      pool.appendChild(card);
+    });
+  }
+  function showDetail(p) {
+    document.getElementById("dName").textContent = p.name;
+    document.getElementById("dMeta").textContent = p.pos + " | " + p.team;
+    document.getElementById("dPos").textContent = p.pos;
+    document.getElementById("dTeam").textContent = p.team;
+    document.getElementById("dAge").textContent = p.age;
+    document.getElementById("dSalary").textContent = fmt(p._salary) + "/yr";
+    document.getElementById("dTerm").textContent = p._term + " years";
+    document.getElementById("dAgent").textContent = p._agent;
+    document.getElementById("detail").classList.add("show");
+  }
+  function closeDetail() {
+    document.getElementById("detail").classList.remove("show");
+  }
+  renderPool();
+</script>
+</body>
+</html>
