@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - V0.06</title>
+<title>Fantasy GM versus Agents - V0.07</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
@@ -59,6 +59,12 @@
   .result.success { background: #14532d; color: #86efac; }
   .result.fail { background: #450a0a; color: #fca5a5; }
   .roster-note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
+  .restructure-panel { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; display: none; border-left: 4px solid #f59e0b; }
+  .restructure-panel h2 { font-size: 15px; margin-bottom: 12px; color: #f59e0b; }
+  .restructure-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .btn-restructure { background: #334155; color: #e2e8f0; padding: 8px 14px; border-radius: 6px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
+  .btn-restructure:hover { background: #475569; }
+  .restructure-note { font-size: 12px; color: #94a3b8; font-style: italic; }
 </style>
 </head>
 <body>
@@ -67,12 +73,12 @@
       <h1>Fantasy GM versus Agents</h1>
       <div class="subtitle">Fantasy Football</div>
     </div>
-    <div class="version">11.26.26 V0.06</div>
+    <div class="version">11.26.26 V0.07</div>
   </div>
   <div class="cap-tracker">Salary Cap: $200,000,000 | Used: <span id="capUsed">$213,000,000</span> | Remaining: <span class="negative" id="capRemaining">-$13,000,000</span></div>
   <div class="player-card">
     <div class="name" id="playerName">Justin Jefferson, WR</div>
-    <div class="meta">WR1 | Age 26 | Team: Vikings</div>
+    <div class="meta">Position Ranking: WR1 | Age 26 | Team: Vikings</div>
     <div class="agent-line">Agent: <span id="agentName">Marcus Delacroix</span> - <span class="personality" id="agentPersonality">Cutthroat</span></div>
     <div class="current-deal">Current deal: <span>3 years, $42,000,000/yr</span> | 1 year left | No-trade clause | $20,000,000 guaranteed</div>
   </div>
@@ -127,6 +133,19 @@
     <button class="btn btn-pass" id="btnPass" onclick="makeDecision('pass')">Pass</button>
   </div>
   <div class="result" id="resultBox"></div>
+  <div class="restructure-panel" id="restructurePanel">
+    <h2>Restructure Menu</h2>
+    <div class="restructure-buttons">
+      <button class="btn-restructure" onclick="restructure('void')">Void Year</button>
+      <button class="btn-restructure" onclick="restructure('roll')">Roll Bonus into Salary</button>
+      <button class="btn-restructure" onclick="restructure('shorten')">Shorten Term</button>
+      <button class="btn-restructure" onclick="restructure('push')">Push Money Back</button>
+      <button class="btn-restructure" onclick="restructure('defer')">Defer Signing Bonus</button>
+      <button class="btn-restructure" onclick="restructure('hybrid')">Hybrid</button>
+    </div>
+    <div class="year-grid" id="dealGrid"></div>
+    <div class="restructure-note" id="restructureNote"></div>
+  </div>
   <div class="roster-note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
 <script src="script.js"></script>
 </body>
