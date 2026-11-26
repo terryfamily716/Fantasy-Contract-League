@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy GM versus Agents - Draft Board - V0.09</title>
+<title>Fantasy GM versus Agents - Draft Board - V0.10</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f1419; color: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
@@ -26,6 +26,10 @@
   .team-box { background: #1a1f2e; border-radius: 8px; padding: 10px; border: 1px solid #334155; }
   .team-box .team-name { font-size: 13px; font-weight: bold; color: #60a5fa; }
   .team-box .roster-count { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .team-box .rating { font-size: 11px; font-weight: bold; margin-top: 2px; }
+  .team-box .rating.contender { color: #22c55e; }
+  .team-box .rating.bubble { color: #f59e0b; }
+  .team-box .rating.rebuild { color: #ef4444; }
   .team-box.active { border-color: #ef4444; }
   .offer-feed { background: #1a1f2e; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
   .offer-feed h2 { font-size: 15px; color: #94a3b8; margin-bottom: 12px; }
@@ -51,6 +55,15 @@
   .btn-pass { background: #475569; color: #fff; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .note { margin-top: 20px; font-size: 11px; color: #475569; text-align: center; }
+  .waiver-popup { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .waiver-popup.show { display: flex; }
+  .waiver-card { background: #1a1f2e; border-radius: 12px; padding: 24px; max-width: 420px; width: 100%; border: 1px solid #334155; }
+  .waiver-card h2 { font-size: 18px; color: #f59e0b; margin-bottom: 12px; }
+  .waiver-card .offer-detail { font-size: 14px; color: #cbd5e1; margin-bottom: 8px; line-height: 1.5; }
+  .waiver-card .question { font-size: 14px; color: #e2e8f0; margin: 16px 0; }
+  .waiver-card .btns { display: flex; gap: 10px; }
+  .waiver-card .btn-waive { background: #22c55e; color: #fff; flex: 1; }
+  .waiver-card .btn-stay { background: #475569; color: #fff; flex: 1; }
 </style>
 </head>
 <body>
@@ -61,7 +74,7 @@
     </div>
     <div style="text-align:right">
       <a class="home-link" href="index.html">Back to Home</a>
-      <div class="version">11.26.26 V0.09</div>
+      <div class="version">11.26.26 V0.10</div>
     </div>
   </div>
   <div class="cap-tracker">League Cap: $301,000,000 | Your Team Used: <span id="capUsed">$0</span> | Remaining: <span class="remaining" id="capRemaining">$301,000,000</span></div>
@@ -96,13 +109,45 @@
     </div>
   </div>
   <div class="note">Prototype only. All contracts simulated. Real names used as fantasy foundation.</div>
+  <div class="waiver-popup" id="waiverPopup">
+    <div class="waiver-card">
+      <h2>No-Trade Waiver Request</h2>
+      <div class="offer-detail" id="waiverDetail"></div>
+      <div class="question">Jefferson's agent says he'd consider this one. Waive the no-trade?</div>
+      <div class="btns">
+        <button class="btn btn-waive" onclick="waiveTrade()">Waive It</button>
+        <button class="btn btn-stay" onclick="stayPut()">Stay Put</button>
+      </div>
+    </div>
+  </div>
 <script>
   var teams = ["Your Team","Kansas City Chiefs","Buffalo Bills","Baltimore Ravens","San Francisco 49ers","Dallas Cowboys","Green Bay Packers","Philadelphia Eagles","Miami Dolphins","Denver Broncos","Seattle Seahawks","Las Vegas Raiders"];
+  var ratings = {
+    "Your Team": "contender",
+    "Kansas City Chiefs": "contender",
+    "Buffalo Bills": "contender",
+    "Baltimore Ravens": "contender",
+    "San Francisco 49ers": "contender",
+    "Dallas Cowboys": "bubble",
+    "Green Bay Packers": "bubble",
+    "Philadelphia Eagles": "bubble",
+    "Miami Dolphins": "bubble",
+    "Denver Broncos": "rebuild",
+    "Seattle Seahawks": "rebuild",
+    "Las Vegas Raiders": "rebuild"
+  };
+  var rosterStrength = {
+    "Your Team": 92, "Kansas City Chiefs": 95, "Buffalo Bills": 90, "Baltimore Ravens": 88,
+    "San Francisco 49ers": 87, "Dallas Cowboys": 78, "Green Bay Packers": 76, "Philadelphia Eagles": 74,
+    "Miami Dolphins": 72, "Denver Broncos": 55, "Seattle Seahawks": 52, "Las Vegas Raiders": 48
+  };
+  var injuries = { "San Francisco 49ers": ["star WR out 6 weeks"], "Dallas Cowboys": ["starting QB questionable"] };
   var grid = document.getElementById("teamsGrid");
   teams.forEach(function(t, i) {
     var box = document.createElement("div");
     box.className = "team-box" + (i === 0 ? " active" : "");
-    box.innerHTML = "<div class=\"team-name\">" + t + "</div><div class=\"roster-count\">0 players signed</div>";
+    var inj = injuries[t] ? " | " + injuries[t].join(", ") : "";
+    box.innerHTML = "<div class=\"team-name\">" + t + "</div><div class=\"roster-count\">0 players signed" + inj + "</div><div class=\"rating " + ratings[t] + "\">" + ratings[t].toUpperCase() + "</div>";
     grid.appendChild(box);
   });
   var secs = 23*3600 + 58*60 + 41;
@@ -120,6 +165,36 @@
     if (diff < 60) return "just now";
     if (diff < 3600) return Math.floor(diff/60) + " min ago";
     return Math.floor(diff/3600) + " hr ago";
+  }
+  function reevaluateRatings() {
+    teams.forEach(function(t) {
+      var str = rosterStrength[t];
+      if (injuries[t] && injuries[t].length > 0) str -= 10;
+      if (str >= 85) ratings[t] = "contender";
+      else if (str >= 70) ratings[t] = "bubble";
+      else ratings[t] = "rebuild";
+    });
+    var boxes = grid.querySelectorAll(".team-box");
+    boxes.forEach(function(box, i) {
+      var t = teams[i];
+      var rEl = box.querySelector(".rating");
+      rEl.className = "rating " + ratings[t];
+      rEl.textContent = ratings[t].toUpperCase();
+    });
+  }
+  function shouldTriggerWaiver(team) {
+    return ratings[team] === "contender" || ratings[team] === "bubble";
+  }
+  function showWaiverPopup(team, summary) {
+    document.getElementById("waiverDetail").textContent = team + " offered: " + summary;
+    document.getElementById("waiverPopup").classList.add("show");
+  }
+  function waiveTrade() {
+    document.getElementById("waiverPopup").classList.remove("show");
+    alert("Jefferson waives the no-trade. Trade in motion.");
+  }
+  function stayPut() {
+    document.getElementById("waiverPopup").classList.remove("show");
   }
   function submitOffer() {
     var base = parseFloat(document.getElementById("base").value) || 0;
@@ -159,6 +234,13 @@
     row.innerHTML = "<span class=\"team\">Your Team</span><span class=\"terms\">Passed</span><span class=\"time-ago\">just now</span>";
     feed.insertBefore(row, feed.firstChild);
   }
+  setTimeout(function() {
+    var chiefTerms = "5 yrs, $30M/yr, $20M bonus, $90M guaranteed, no-trade";
+    if (shouldTriggerWaiver("Kansas City Chiefs")) {
+      showWaiverPopup("Kansas City Chiefs", chiefTerms);
+    }
+  }, 8000);
+  setInterval(reevaluateRatings, 30000);
 </script>
 </body>
 </html>
